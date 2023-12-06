@@ -4,7 +4,6 @@ import torch.optim as optim
 import math
 
 def train(model, train_loader, folder_logs, folder_model, num_epochs=20, lr=1e-4, betas=(0.9,0.95), wd=0.05, warmup_epoch=20):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # optimizer = optim.AdamW(model.parameters(), lr=lr, betas=betas, weight_decay=wd)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -28,3 +27,4 @@ def train(model, train_loader, folder_logs, folder_model, num_epochs=20, lr=1e-4
         with open(folder_logs, 'a+') as f:
             f.writelines(f"Epoch: {epoch}/{num_epochs}, Loss: {loss.item()} \n")
     print("Training complete!")
+    return model
