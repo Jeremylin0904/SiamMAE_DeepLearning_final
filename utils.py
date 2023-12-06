@@ -1,35 +1,66 @@
-import numpy as np
+import os
+import matplotlib.pyplot as plt
+from LabelPropagation import  read_list_frames, read_list_labels
+from tqdm import tqdm
+import numpy as np 
+from PIL import Image
+from sklearn.metrics import jaccard_score, f1_score
 
-def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False):
+def show_segm(videos_path, labels_path, video_name, frame_num):
+  frame_path = os.path.join(videos_path, video_name, frame_num) + '.jpg'
+  segm_pred_path = os.path.join(videos_path, video_name, frame_num) + '.png'
+  segm_gt_path = os.path.join(labels_path, video_name, frame_num) + '.png'
 
-    grid_h = np.arange(grid_size, dtype=np.float32)
-    grid_w = np.arange(grid_size, dtype=np.float32)
-    grid = np.meshgrid(grid_w, grid_h)
-    grid = np.stack(grid, axis=0)
+  frame = plt.imread(frame_path)
+  segm_pred = plt.imread(segm_pred_path)
+  segm_gt = plt.imread(segm_gt_path)
 
-    grid = grid.reshape([2, 1, grid_size, grid_size])
-    pos_embed = get_2d_sincos_pos_embed_from_grid(embed_dim, grid)
-    if cls_token:
-        pos_embed = np.concatenate([np.zeros([1, embed_dim]), pos_embed], axis=0)
-    return pos_embed
+  fig, axs = plt.subplots(1, 2, figsize=(10,10))
+  axs[0].imshow(frame, cmap='gray')
+  axs[0].imshow(segm_pred, cmap='gray', alpha=0.5)
+  axs[0].title.set_text('predicted segmentation')
 
-def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
-    emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[0])
-    emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[1])
+  axs[1].imshow(frame, cmap='gray')
+  axs[1].imshow(segm_gt, cmap='gray', alpha=0.5)
+  axs[1].title.set_text('ground truth segmentation')
 
-    emb = np.concatenate([emb_h, emb_w], axis=1)
-    return emb
+  fig.show()
 
-def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
-    omega = np.arange(embed_dim // 2, dtype=np.float32)
-    omega /= embed_dim / 2.
-    omega = 1. / 10000**omega
+def score_one_vid(videos_path, labels_path, video_name):
+  list_frames = read_list_frames(os.path.join(videos_path, video_name))
+  list_segs = [f.replace(".jpg", ".png") for f in list_frames]
+  list_labels = read_list_labels(os.path.join(labels_path, video_name))
+  n = len(list_segs)
+  scores = np.zeros((n-1,2))
+  for i in tqdm(range(1, n)):
+    pred_seg = Image.open(list_segs[i])
+    real_seg = Image.open(list_labels[i])
+    pred_seg = np.asarray(pred_seg).reshape(-1)
+    real_seg = np.asarray(real_seg).reshape(-1)
+    scores[i-1,0] = jaccard_score(real_seg, pred_seg, average='macro')
+    scores[i-1,1] = f1_score(real_seg, pred_seg, average='macro')
 
-    pos = pos.reshape(-1)
-    out = np.einsum('m, d->md', pos, omega)
+  return np.mean(scores, axis=0)
 
-    emb_sin = np.sin(out)
-    emb_cos = np.cos(out)
+def eval_model(list_videos, videos_path, labels_path):
+  scores = []
+  for video in tqdm(list_videos):
+    list_frames = read_list_frames(os.path.join(videos_path, video))
+    list_segs = [f.replace(".jpg", ".png") for f in list_frames]
+    list_labels = read_list_labels(os.path.join(labels_path, video))
+    n = len(list_segs)
+    scores_vid = np.zeros((n-1,2))
+    for i in range(1, n):
+      pred_seg = Image.open(list_segs[i])
+      real_seg = Image.open(list_labels[i])
+      pred_seg = np.asarray(pred_seg).reshape(-1)
+      real_seg = np.asarray(real_seg).reshape(-1)
+      scores_vid[i-1,0] = jaccard_score(real_seg, pred_seg, average='macro')
+      scores_vid[i-1,1] = f1_score(real_seg, pred_seg, average='macro')
+    scores.append(scores_vid)
+  scores = np.concatenate(scores, axis=0)
+  scores = np.mean(scores, axis=0)
+  print(f'J = {scores[0]}, F = {scores[1]}, J&F = {np.mean(scores)}')
+  return scores
 
-    emb = np.concatenate([emb_sin, emb_cos], axis=1)
-    return emb
+
