@@ -1,9 +1,7 @@
 import os 
 import torch
-from DataLoading import *
 import torch.optim as optim
 import math
-from SiamMae import *
 
 def train(model, train_loader, folder_logs, folder_model, num_epochs=20, lr=1e-4, betas=(0.9,0.95), wd=0.05, warmup_epoch=20):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
