@@ -187,8 +187,7 @@ class DecoderBlock(nn.Module):
 
   def forward(self, x1, x2):
     x = x2 + self.cross_attention(self.norm1(x1), self.norm1(x2))
-    x = x + self.self_attention(self.norm1(x1))
-    x = x + self.self_attention(self.norm1(x2))
+    x = x + self.self_attention(self.norm1(x))
     x = x + self.mlp(self.norm2(x))
     return x
 
@@ -326,9 +325,9 @@ class SiameseAutoencoderViT(nn.Module):
         x_2 = x_2 + self.decoder_pos_embed
 
         for blk in self.decoder_blocks:
-            x = blk(x_1, x_2)
+            x_2 = blk(x_1, x_2)
 
-        x = self.decoder_norm(x)
+        x = self.decoder_norm(x_2)
         x = self.decoder_pred(x)
         x = x[:, 1:, :]
 
