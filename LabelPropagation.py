@@ -111,7 +111,7 @@ def encode_frame(model, frame, patch_size=16, dino=False):
   else:
     frame = frame.unsqueeze(0).cuda()
     h, w = int(frame.shape[2] / patch_size), int(frame.shape[3] / patch_size)
-    encoded_test_data, _, _  =  model.forward_encoder(frame, 0)
+    encoded_test_data =  model.forward_encoder(frame, 0)
     out = encoded_test_data[:,1:,:].squeeze()
   return out, h, w
 
