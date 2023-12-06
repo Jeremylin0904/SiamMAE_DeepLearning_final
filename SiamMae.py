@@ -349,7 +349,7 @@ class SiameseAutoencoderViT(nn.Module):
         latent_2, mask_2, ids_restore_2 = self.forward_encoder(imgs[:, 1].float(), mask_ratio=mask_ratio)
         pred = self.forward_decoder(latent_1, latent_2, ids_restore_2)
         loss = self.forward_loss(imgs, pred, mask_2)
-        return loss, pred, mask_2, latent_2
+        return loss, pred
 
 
 # Different model definitons

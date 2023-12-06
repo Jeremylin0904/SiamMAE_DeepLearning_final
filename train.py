@@ -18,7 +18,7 @@ def train(model, train_loader, folder_logs, folder_model, num_epochs=20, lr=1e-4
             data = data.to(device)
 
             optimizer.zero_grad()
-            loss, _, _ = model(data)
+            loss, pred = model(data)
             loss.backward()
             optimizer.step()
             print(f"Epoch: {epoch}/{num_epochs}, Batch: {batch_idx}/{len(train_loader)}, Loss: {loss.item()}")
