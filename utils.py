@@ -5,6 +5,7 @@ from tqdm import tqdm
 import numpy as np 
 from PIL import Image
 from sklearn.metrics import jaccard_score, f1_score
+from glob import glob
 
 def show_segm(videos_path, labels_path, video_name, frame_num, model_name):
   frame_path = os.path.join(videos_path, video_name, frame_num) + '.jpg'
@@ -28,7 +29,7 @@ def show_segm(videos_path, labels_path, video_name, frame_num, model_name):
 
 def score_one_vid(videos_path, labels_path, video_name, model_name):
   list_frames = read_list_frames(os.path.join(videos_path, video_name))
-  list_segs = read_list_frames(os.path.join(videos_path, model_name, video_name))
+  list_segs = glob(os.path.join(videos_path, model_name, video_name, '*.png'))
   list_labels = read_list_labels(os.path.join(labels_path, video_name))
   n = len(list_segs)
   scores = np.zeros((n-1,2))
