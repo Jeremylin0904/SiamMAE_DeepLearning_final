@@ -164,7 +164,7 @@ def eval_davis(model, video_name, videos_path, labels_path, m, model_name, patch
 
   for line in urlopen("https://raw.githubusercontent.com/Liusifei/UVC/master/libs/data/palette.txt"):
     color_palette.append([int(i) for i in line.decode("utf-8").split('\n')[0].split(" ")])
-    color_palette = np.asarray(color_palette, dtype=np.uint8).reshape(-1,3)
+  color_palette = np.asarray(color_palette, dtype=np.uint8).reshape(-1,3)
 
 
 
