@@ -145,8 +145,8 @@ class DecoderBlock(nn.Module):
     ):
         super().__init__()
         self.norm1 = norm_layer(dim)
-
         self.norm2 = norm_layer(dim)
+        self.norm3 = norm_layer(dim)
         self.mlp = mlp_layer(
             in_dim=dim,
             hidden_dim=int(dim * mlp_ratio),
@@ -187,8 +187,8 @@ class DecoderBlock(nn.Module):
 
   def forward(self, x1, x2):
     x = x2 + self.cross_attention(self.norm1(x1), self.norm1(x2))
-    x = x + self.self_attention(self.norm1(x))
-    x = x + self.mlp(self.norm2(x))
+    x = x + self.self_attention(self.norm2(x))
+    x = x + self.mlp(self.norm3(x))
     return x
 
 class SiameseAutoencoderViT(nn.Module):
