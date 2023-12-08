@@ -159,12 +159,12 @@ def imwrite_indexed(filename, array, color_palette):
 
 
 @torch.no_grad()
-def eval_davis(model, video_name, videos_path, labels_path, m, model_name, patch_size=16, dino=False):
+def eval_davis(model, video_name, videos_path, labels_path, m, tau, k, nneib, model_name, patch_size=16, dino=False):
   color_palette = []
 
   for line in urlopen("https://raw.githubusercontent.com/Liusifei/UVC/master/libs/data/palette.txt"):
     color_palette.append([int(i) for i in line.decode("utf-8").split('\n')[0].split(" ")])
-    color_palette = np.asarray(color_palette, dtype=np.uint8).reshape(-1,3)
+  color_palette = np.asarray(color_palette, dtype=np.uint8).reshape(-1,3)
 
 
 
@@ -181,7 +181,7 @@ def eval_davis(model, video_name, videos_path, labels_path, m, model_name, patch
     past_frames_segs = [first_frame_seg] + [pair[1] for pair in que.queue]
 
     target_frame = read_frame(list_frames[i], dino=dino)[0]
-    frame_seg, frame_feature = label_propagation(model, past_frames_feats, past_frames_segs, target_frame, 1, 7, 10, dino=dino)
+    frame_seg, frame_feature = label_propagation(model, past_frames_feats, past_frames_segs, target_frame, tau, k, nneib, dino=dino)
 
     if que.qsize() == m:
       que.get()
