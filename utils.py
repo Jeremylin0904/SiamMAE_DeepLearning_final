@@ -26,9 +26,9 @@ def show_segm(videos_path, labels_path, video_name, frame_num, model_name):
 
   fig.show()
 
-def score_one_vid(videos_path, labels_path, video_name):
+def score_one_vid(videos_path, labels_path, video_name, model_name):
   list_frames = read_list_frames(os.path.join(videos_path, video_name))
-  list_segs = [f.replace(".jpg", ".png") for f in list_frames]
+  list_segs = read_list_frames(os.path.join(videos_path, model_name, video_name))
   list_labels = read_list_labels(os.path.join(labels_path, video_name))
   n = len(list_segs)
   scores = np.zeros((n-1,2))
