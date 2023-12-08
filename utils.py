@@ -6,9 +6,9 @@ import numpy as np
 from PIL import Image
 from sklearn.metrics import jaccard_score, f1_score
 
-def show_segm(videos_path, labels_path, video_name, frame_num):
+def show_segm(videos_path, labels_path, video_name, frame_num, model_name):
   frame_path = os.path.join(videos_path, video_name, frame_num) + '.jpg'
-  segm_pred_path = os.path.join(videos_path, video_name, frame_num) + '.png'
+  segm_pred_path = os.path.join(videos_path, model_name, video_name, frame_num) + '.png'
   segm_gt_path = os.path.join(labels_path, video_name, frame_num) + '.png'
 
   frame = plt.imread(frame_path)
