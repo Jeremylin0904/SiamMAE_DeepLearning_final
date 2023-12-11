@@ -45,11 +45,11 @@ train_loader = DataLoader(train_data, 32, shuffle=True, collate_fn=custom_collat
 
 # Model, optimizer setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-sim_mae_vit_small_path16 = sim_mae_vit_tiny_patch16_dec512d8b
-model = sim_mae_vit_small_path16().to(device)
+sim_mae_vit_tiny_path16 = sim_mae_vit_tiny_patch16_dec512d8b
+model = sim_mae_vit_tiny_path16().to(device)
 # Change in your branch
-folder_logs = '/home/sebas/training_20_epochs/logs.txt'
-folder_model = '/home/sebas/training_20_epochs'
+folder_logs = '/home/sebas/training_50_epochs/logs.txt'
+folder_model = '/home/sebas/training_50_epochs'
 
-num_epochs = 20
+num_epochs = 50
 model = train(model, train_loader, folder_logs, folder_model, num_epochs=num_epochs, lr=1e-4)
