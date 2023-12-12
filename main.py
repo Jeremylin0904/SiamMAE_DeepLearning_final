@@ -48,8 +48,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sim_mae_vit_tiny_path8 = sim_mae_vit_tiny_patch8_dec512d8b
 model = sim_mae_vit_tiny_path8().to(device)
 # Change in your branch
-folder_logs = '/home/sebas/training_50_epochs/logs.txt'
-folder_model = '/home/sebas/training_50_epochs'
+folder_logs = '/home/sebas/training_50_epochs_t8/logs.txt'
+folder_model = '/home/sebas/training_50_epochs_t8'
 
 num_epochs = 50
 model = train(model, train_loader, folder_logs, folder_model, num_epochs=num_epochs, lr=1e-4)
