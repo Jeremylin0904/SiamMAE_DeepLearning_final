@@ -373,3 +373,10 @@ def sim_mae_vit_tiny_patch16_dec512d8b(**kwargs):
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     return model
+
+def sim_mae_vit_tiny_patch8_dec512d8b(**kwargs):
+    model = SiameseAutoencoderViT(
+        patch_size=8, embed_dim=192, depth=12, num_heads=3,
+        decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
+        mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    return model
