@@ -20,8 +20,6 @@ import gc
 import av
 import joblib
 
-from timm.models.vision_transformer import PatchEmbed
-
 from DataLoading import *
 from SiamMae import *
 from LabelPropagation import *

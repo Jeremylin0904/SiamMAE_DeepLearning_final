@@ -206,12 +206,22 @@ class DecoderBlock(nn.Module):
     x = self.proj(x)
     return x
 
-  def forward(self, x1, x2):
-    x = x2 + self.cross_attention(self.norm1(x1), self.norm1(x2))
-    x = x + self.self_attention(self.norm2(x))
-    x = x + self.mlp(self.norm3(x))
+  def forward(self, x1, x2, cross_self=True, cross=False, joint=False):
+    if cross_self:
+      x = x2 + self.cross_attention(self.norm1(x1), self.norm1(x2))
+      x = x + self.self_attention(self.norm2(x))
+    elif cross:
+      x = x2 + self.cross_attention(self.norm1(x1), self.norm1(x2))
+    if joint:
+      x = x1 + self.mlp(self.norm3(x1))
+    else:
+      x = x + self.mlp(self.norm3(x))
     return x
 
+"""
+Reference when building base arcitecture:
+https://github.com/facebookresearch/mae/blob/main/models_mae.py
+"""
 class SiameseAutoencoderViT(nn.Module):
     def __init__(
         self,
@@ -298,7 +308,7 @@ class SiameseAutoencoderViT(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
         return imgs
 
-    def random_masking(self, x, mask_ratio):
+    def random_masking(self, x, mask_ratio, joint_encoder=False):
         N, L, D = x.shape
         len_keep = int(L * (1 - mask_ratio))
 
@@ -312,14 +322,27 @@ class SiameseAutoencoderViT(nn.Module):
         mask = torch.ones([N, L], device=x.device)
         mask[:, :len_keep] = 0
         mask = torch.gather(mask, dim=1, index=ids_restore)
+        if joint_encoder:
+          bmask = torch.zeros_like(mask, dtype=torch.bool)
+          x_masked = x.clone()
+          x_masked[~bmask] = 0
 
         return x_masked, mask, ids_restore
 
-    def forward_encoder(self, x, mask_ratio):
+    def forward_encoder(self, x, mask_ratio, joint_encoder=False, joint_decoder=False):
         x = self.patch_embed(x)
         x = x + self.pos_embed[:, 1:, :]
-        if mask_ratio > 0:
-            x, mask, ids_restore = self.random_masking(x, mask_ratio)
+        if mask_ratio > 0 or joint_decoder or joint_encoder:
+            if joint_encoder:
+              x1_idx = int(x.shape[0] / 2)
+              x2_idx = x.shape[0]
+              x1, mask1, ids_restore1 = self.random_masking(x[:x1_idx], mask_ratio=0)
+              x2, mask2, ids_restore2 = self.random_masking(x[x1_idx:x2_idx], mask_ratio=mask_ratio)
+              x = torch.vstack([x1, x2])
+              mask = torch.vstack([mask1, mask2])
+              ids_restore = torch.vstack([ids_restore1, ids_restore2])
+            else:
+              x, mask, ids_restore = self.random_masking(x, mask_ratio)
         cls_token = self.cls_token + self.pos_embed[:, :1, :]
         cls_tokens = cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
@@ -327,12 +350,12 @@ class SiameseAutoencoderViT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
         x = self.norm(x)
-        if mask_ratio > 0:
+        if mask_ratio > 0 or joint_decoder or joint_encoder:
             return x, mask, ids_restore
         else:
            return x
 
-    def forward_decoder(self, f1, f2, ids_restore_2):
+    def forward_decoder(self, f1, f2, ids_restore_2, joint_decoder=False):
 
         x_1 = self.decoder_embed(f1)
         x_1 = x_1 + self.decoder_pos_embed
@@ -345,6 +368,9 @@ class SiameseAutoencoderViT(nn.Module):
 
         x_2 = x_2 + self.decoder_pos_embed
 
+        if joint_decoder:
+          x_1 = torch.vstack([x_1, x_2])
+
         for blk in self.decoder_blocks:
             x_2 = blk(x_1, x_2)
 
@@ -354,8 +380,11 @@ class SiameseAutoencoderViT(nn.Module):
 
         return x
 
-    def forward_loss(self, imgs, pred, mask):
-        target = self.patchify(imgs[:, 1, :, :, :])
+    def forward_loss(self, imgs, pred, mask, joint_decoder=False):
+        if joint_decoder:
+          target = self.patchify(imgs[:, :, :, :])
+        else:
+          target = self.patchify(imgs[:, 1, :, :, :])
 
         loss = (pred - target) ** 2
         loss = loss.mean(dim=-1)
@@ -364,9 +393,27 @@ class SiameseAutoencoderViT(nn.Module):
 
         return loss
 
-    def forward(self, imgs, mask_ratio=0.95):
-        latent_1 = self.forward_encoder(imgs[:,0].float(), mask_ratio=0)
-        latent_2, mask_2, ids_restore_2 = self.forward_encoder(imgs[:, 1].float(), mask_ratio=mask_ratio)
+    def forward(self, imgs, mask_ratio=0.95, joint_encoder=False, joint_decoder=False):
+        if joint_encoder:
+          imgs_joint = torch.vstack([imgs[:, 0], imgs[:, 1]])
+          latent, mask, ids_restore = self.forward_encoder(imgs_joint.float(), mask_ratio=mask_ratio)
+          l1_idx = int(latent.shape[0] / 2)
+          l2_idx = latent.shape[0]
+          latent_1 = latent[:l1_idx]
+          latent_2 = latent[l1_idx:l2_idx]
+          ids_restore_2 = ids_restore[l1_idx:l2_idx]
+          mask_1 = mask[:l1_idx]
+          mask_2 = mask[l1_idx:l2_idx]
+        elif joint_decoder:
+          latent_1, mask_1, _ = self.forward_encoder(imgs[:, 0].float(), mask_ratio=0)
+          latent_2, mask_2, ids_restore_2 = self.forward_encoder(imgs[:, 1].float(), mask_ratio=mask_ratio)
+        else:
+          latent_1 = self.forward_encoder(imgs[:, 0].float(), mask_ratio=0)
+          latent_2, mask_2, ids_restore_2 = self.forward_encoder(imgs[:, 1].float(), mask_ratio=mask_ratio)
+
+        if joint_decoder:
+          imgs = torch.vstack([imgs[:, 0], imgs[:, 1]])
+          mask_2 = torch.vstack([mask_1, mask_2])
         pred = self.forward_decoder(latent_1, latent_2, ids_restore_2)
         loss = self.forward_loss(imgs, pred, mask_2)
         return loss, pred

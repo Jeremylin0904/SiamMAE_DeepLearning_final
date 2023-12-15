@@ -21,7 +21,6 @@ import gc
 import av
 import joblib
 import seaborn as sns
-from timm.models.vision_transformer import PatchEmbed
 from torchvision.io import read_video
 from DataLoading import *
 from SiamMae import *
