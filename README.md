@@ -9,3 +9,6 @@ This project was part of the course [DD2412 Deep Learning, Advanced Course](http
 Please refer to the notebook example to see how to run the experiments. We could not upload our trained model to the Github due to storage limiations.
 
 ## Results
+Example of results from object segmentation, the first video was an easy example whereas the second one was harder one. For more details, refer to our project report.
+![davis_bear](https://github.com/Jeremylin0904/DeepLearning_final/assets/117983459/0c434532-417e-4509-817a-eba42a35e3e1)
+![davis_bike](https://github.com/Jeremylin0904/DeepLearning_final/assets/117983459/c4ebc99d-a696-4d11-9fa5-4faa339242ec)
