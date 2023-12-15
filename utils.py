@@ -45,7 +45,6 @@ def score_one_vid(videos_path, labels_path, video_name, model_name):
 def eval_model(list_videos, videos_path, labels_path, model_name):
   scores = []
   for video in tqdm(list_videos):
-    list_frames = read_list_frames(os.path.join(videos_path, video))
     list_segs = glob(os.path.join(videos_path, model_name, video, '*.png'))
     list_labels = read_list_labels(os.path.join(labels_path, video))
     n = len(list_segs)
