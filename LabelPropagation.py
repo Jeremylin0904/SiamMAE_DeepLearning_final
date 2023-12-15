@@ -176,6 +176,14 @@ def eval_davis(model, video_name, videos_path, labels_path, m, tau, k, nneib, mo
 
   first_frame_feat, _ , _ = encode_frame(model, first_frame, dino=dino)
   que = queue.Queue(m)
+  path_folder_model = os.path.join(videos_path, model_name)
+
+  if not os.path.isdir(path_folder_model):
+    os.mkdir(path_folder_model)
+  path_video_model = os.path.join(path_folder_model, video_name)
+  if not os.path.isdir(path_video_model):
+    os.mkdir(path_video_model)
+
   for i in tqdm(range(1, len(list_frames))):
     past_frames_feats = [first_frame_feat] + [pair[0]  for pair in que.queue]
     past_frames_segs = [first_frame_seg] + [pair[1] for pair in que.queue]
@@ -193,5 +201,5 @@ def eval_davis(model, video_name, videos_path, labels_path, m, tau, k, nneib, mo
     frame_seg = np.array(frame_seg.squeeze().cpu(), dtype=np.uint8)
     frame_seg = np.array(Image.fromarray(frame_seg).resize((ori_w, ori_h), 0))
     frame_nm = list_frames[i].split('/')[-1].replace(".jpg", ".png")
-    
+    path_video_model = os.path.join(path_folder_model, video_name)
     imwrite_indexed(os.path.join(videos_path, model_name, video_name, frame_nm), frame_seg, color_palette)

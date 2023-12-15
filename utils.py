@@ -28,7 +28,6 @@ def show_segm(videos_path, labels_path, video_name, frame_num, model_name):
   fig.show()
 
 def score_one_vid(videos_path, labels_path, video_name, model_name):
-  list_frames = read_list_frames(os.path.join(videos_path, video_name))
   list_segs = glob(os.path.join(videos_path, model_name, video_name, '*.png'))
   list_labels = read_list_labels(os.path.join(labels_path, video_name))
   n = len(list_segs)
@@ -43,11 +42,10 @@ def score_one_vid(videos_path, labels_path, video_name, model_name):
 
   return np.mean(scores, axis=0)
 
-def eval_model(list_videos, videos_path, labels_path):
+def eval_model(list_videos, videos_path, labels_path, model_name):
   scores = []
   for video in tqdm(list_videos):
-    list_frames = read_list_frames(os.path.join(videos_path, video))
-    list_segs = [f.replace(".jpg", ".png") for f in list_frames]
+    list_segs = glob(os.path.join(videos_path, model_name, video, '*.png'))
     list_labels = read_list_labels(os.path.join(labels_path, video))
     n = len(list_segs)
     scores_vid = np.zeros((n-1,2))

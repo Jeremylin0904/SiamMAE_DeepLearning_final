@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
-from timm.models.vision_transformer import PatchEmbed
 from timm.models.layers import to_2tuple
 
 
@@ -130,6 +129,28 @@ class EncoderBlock(nn.Module):
   def forward(self, x):
     x = x + self.attention(self.norm1(x))
     x = x + self.mlp(self.norm2(x))
+    return x
+
+class PatchEmbed(nn.Module):
+  def __init__(
+      self,
+      img_size=224,
+      patch_size=16,
+      in_chans=3,
+      embed_dim=768,
+      bias=True
+  ):
+    super().__init__()
+    self.img_size = to_2tuple(img_size)
+    self.patch_size = to_2tuple(patch_size)
+    self.grid_size = (self.img_size[0] // self.patch_size[0], self.img_size[1] // self.patch_size[1])
+    self.num_patches = self.grid_size[0] * self.grid_size[1]
+    self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+
+  def forward(self, x):
+    B, C, H, W = x.shape
+    x = self.proj(x)
+    x = x.flatten(2).transpose(1, 2)
     return x
 
 class DecoderBlock(nn.Module):
@@ -370,6 +391,13 @@ def sim_mae_vit_small_patch8_dec512d8b(**kwargs):
 def sim_mae_vit_tiny_patch16_dec512d8b(**kwargs):
     model = SiameseAutoencoderViT(
         patch_size=16, embed_dim=192, depth=12, num_heads=3,
+        decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
+        mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    return model
+
+def sim_mae_vit_tiny_patch8_dec512d8b(**kwargs):
+    model = SiameseAutoencoderViT(
+        patch_size=8, embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     return model
