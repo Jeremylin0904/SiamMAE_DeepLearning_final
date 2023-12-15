@@ -10,6 +10,14 @@ import queue
 from tqdm import tqdm
 from urllib.request import urlopen
 
+
+''' 
+Reference :
+https://github.com/facebookresearch/dino/blob/main/eval_video_segmentation.py
+
+This part was inspired by facebebook implementation of label propagation but adapted to our case.
+'''
+
 def color_normalize(x, mean=[0.485, 0.456, 0.406], std=[0.228, 0.224, 0.225]):
     for t, m, s in zip(x, mean, std):
         t.sub_(m)
@@ -34,7 +42,6 @@ def read_frame(frame_path, patch_size=16, dino=False, ori_shape=False):
     frame = frame[:,:,::-1]
   frame = np.transpose(frame.copy(), (2, 0, 1))
   frame = torch.from_numpy(frame).float()
-  # usual vits normalize frames
   if dino:
     frame = color_normalize(frame)
 
@@ -129,7 +136,7 @@ def label_propagation(model, list_past_features, plabels, tframe, Tau, k, size_n
     mask = compute_mask(h, w, size_neighborhood).unsqueeze(0).repeat(m, 1, 1)
     aff *= mask
 
-  aff = aff.transpose(2, 1).reshape(-1, h * w) # nmb_context*h*w (source: keys) x h*w (tar: queries)
+  aff = aff.transpose(2, 1).reshape(-1, h * w) 
   tk_val, _ = torch.topk(aff, dim=0, k=k)
   tk_val_min, _ = torch.min(tk_val, dim=0)
   aff[aff < tk_val_min] = 0
@@ -139,7 +146,7 @@ def label_propagation(model, list_past_features, plabels, tframe, Tau, k, size_n
   list_segs = [s.cuda() for s in plabels]
   segs = torch.cat(list_segs)
   nmb_context, C, h, w = segs.shape
-  segs = segs.reshape(nmb_context, C, -1).transpose(2, 1).reshape(-1, C).T # C x nmb_context*h*w
+  segs = segs.reshape(nmb_context, C, -1).transpose(2, 1).reshape(-1, C).T 
   tseg = torch.mm(segs, aff)
   tseg = tseg.reshape(1, C, h, w)
 
